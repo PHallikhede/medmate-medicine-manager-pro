@@ -1,6 +1,8 @@
 
 import { useState } from "react";
-import { Heart, Clock, AlertTriangle, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Heart, Clock, AlertTriangle, Sparkles, User, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import MedicineInput from "@/components/MedicineInput";
 import MedicineList from "@/components/MedicineList";
 import InteractionChecker from "@/components/InteractionChecker";
@@ -8,6 +10,7 @@ import ReminderSection from "@/components/ReminderSection";
 
 const Dashboard = () => {
   const [medicines, setMedicines] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   const addMedicine = (medicine: string) => {
     if (medicine.trim() && !medicines.includes(medicine.trim())) {
@@ -17,6 +20,11 @@ const Dashboard = () => {
 
   const removeMedicine = (index: number) => {
     setMedicines(medicines.filter((_, i) => i !== index));
+  };
+
+  const handleLogout = () => {
+    // Clear any stored session data if needed
+    navigate("/");
   };
 
   return (
@@ -31,21 +39,47 @@ const Dashboard = () => {
       {/* Header */}
       <header className="relative bg-white/80 backdrop-blur-lg shadow-lg border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-6 py-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="bg-gradient-to-br from-blue-500 to-green-500 p-3 rounded-2xl shadow-lg">
-                <Heart className="w-10 h-10 text-white" fill="currentColor" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="bg-gradient-to-br from-blue-500 to-green-500 p-3 rounded-2xl shadow-lg">
+                  <Heart className="w-10 h-10 text-white" fill="currentColor" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-blue-400 rounded-full animate-pulse"></div>
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-blue-400 rounded-full animate-pulse"></div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                  MedMate
+                </h1>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Sparkles className="w-4 h-4 text-blue-500" />
+                  Your personal medicine companion
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                MedMate
-              </h1>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Sparkles className="w-4 h-4 text-blue-500" />
-                Your personal medicine companion
-              </p>
+
+            {/* Account Details */}
+            <div className="flex items-center gap-4">
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-blue-100 to-green-100 p-2 rounded-xl">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-semibold text-foreground">Welcome back!</p>
+                    <p className="text-muted-foreground">user@example.com</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="h-12 px-4 bg-white/60 backdrop-blur-sm border-2 border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 hover:text-red-600 rounded-xl shadow-sm transition-all duration-200"
+              >
+                <LogOut className="w-5 h-5 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
