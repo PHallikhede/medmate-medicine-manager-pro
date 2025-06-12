@@ -10,13 +10,13 @@ interface MedicineListProps {
 const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
   if (medicines.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-muted-foreground">
         <div className="relative inline-block">
-          <Pill className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <Pill className="w-16 h-16 mx-auto mb-4 text-slate-300" />
           <Sparkles className="w-6 h-6 absolute -top-2 -right-2 text-blue-300 animate-pulse" />
         </div>
         <p className="text-lg font-medium mb-2">No medicines added yet</p>
-        <p className="text-sm text-gray-400">Add your first medicine above to get started</p>
+        <p className="text-sm text-muted-foreground">Add your first medicine above to get started</p>
       </div>
     );
   }
@@ -26,13 +26,13 @@ const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
       {medicines.map((medicine, index) => (
         <div
           key={index}
-          className="group flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-2xl border-2 border-blue-100/60 hover:border-blue-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+          className="group flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl border-2 border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
         >
           <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-br from-blue-400 to-indigo-500 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-200">
+            <div className="bg-gradient-to-br from-blue-400 to-green-500 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-200">
               <Pill className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-gray-800 text-lg">{medicine}</span>
+            <span className="font-semibold text-foreground text-lg">{medicine}</span>
           </div>
           <Button
             variant="ghost"

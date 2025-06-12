@@ -30,12 +30,12 @@ const MedicineInput = ({ onAddMedicine }: MedicineInputProps) => {
           placeholder="Enter medicine name (e.g., Aspirin, Ibuprofen)"
           value={medicineName}
           onChange={(e) => setMedicineName(e.target.value)}
-          className="pl-12 h-14 text-lg border-2 border-blue-200/60 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200"
+          className="pl-12 h-14 text-lg border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 rounded-2xl bg-white/80 backdrop-blur-sm shadow-sm transition-all duration-200"
         />
       </div>
       <Button 
         type="submit" 
-        className="h-14 px-8 bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 hover:from-blue-600 hover:via-indigo-700 hover:to-purple-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 border-0 font-semibold"
+        className="h-14 px-8 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 border-0 font-semibold"
       >
         <Plus className="w-5 h-5 mr-2" />
         Add Medicine
