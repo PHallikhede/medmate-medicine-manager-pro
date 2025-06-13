@@ -9,7 +9,136 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      drug_interactions: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          interaction_type: string
+          medicine_a: string
+          medicine_b: string
+          severity_level: number | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          interaction_type: string
+          medicine_a: string
+          medicine_b: string
+          severity_level?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          interaction_type?: string
+          medicine_a?: string
+          medicine_b?: string
+          severity_level?: number | null
+        }
+        Relationships: []
+      }
+      logs: {
+        Row: {
+          id: string
+          reminder_id: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          id?: string
+          reminder_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          id?: string
+          reminder_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicines: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          dosage: string | null
+          id: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          dosage?: string | null
+          id?: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          dosage?: string | null
+          id?: string
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          medicine_id: string | null
+          reminder_time: string
+          start_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          medicine_id?: string | null
+          reminder_time: string
+          start_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          medicine_id?: string | null
+          reminder_time?: string
+          start_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
