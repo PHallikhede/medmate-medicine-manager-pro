@@ -10,12 +10,10 @@ interface InteractionCheckerProps {
 }
 
 interface DrugInteraction {
-  id: string;
-  medicine_a: string;
-  medicine_b: string;
-  interaction_type: string;
+  drug1: string;
+  drug2: string;
   description: string;
-  severity_level: number;
+  severity: string;
 }
 
 const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
@@ -28,13 +26,13 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
     setIsChecking(true);
     
     try {
-      // Fetch all drug interactions from Supabase
-      const { data: allInteractions, error } = await supabase
-        .from('drug_interactions')
-        .select('*');
+      // Call the edge function to check drug interactions using RxNav API
+      const { data, error } = await supabase.functions.invoke('check-drug-interactions', {
+        body: { medicines }
+      });
 
       if (error) {
-        console.error('Error fetching interactions:', error);
+        console.error('Error checking interactions:', error);
         toast({
           title: "Error",
           description: "Failed to check drug interactions. Please try again.",
@@ -44,33 +42,7 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
         return;
       }
 
-      const foundInteractions: DrugInteraction[] = [];
-      
-      // Check for interactions between user's medicines
-      for (let i = 0; i < medicines.length; i++) {
-        for (let j = i + 1; j < medicines.length; j++) {
-          const med1 = medicines[i].toLowerCase().trim();
-          const med2 = medicines[j].toLowerCase().trim();
-          
-          // Find interactions where either combination matches
-          const interaction = allInteractions?.find(
-            (inter) =>
-              (inter.medicine_a.toLowerCase() === med1 && inter.medicine_b.toLowerCase() === med2) ||
-              (inter.medicine_a.toLowerCase() === med2 && inter.medicine_b.toLowerCase() === med1)
-          );
-          
-          if (interaction) {
-            foundInteractions.push({
-              ...interaction,
-              // Add the actual medicine names from user's list for display
-              medicine_a: medicines[i],
-              medicine_b: medicines[j],
-            });
-          }
-        }
-      }
-      
-      setInteractions(foundInteractions);
+      setInteractions(data.interactions || []);
       setHasChecked(true);
       
     } catch (error) {
@@ -85,21 +57,24 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
     }
   };
 
-  const getSeverityColor = (severity: number) => {
-    if (severity >= 4) return "from-red-400 to-red-600";
-    if (severity >= 3) return "from-orange-400 to-orange-600";
+  const getSeverityColor = (severity: string) => {
+    const severityLower = severity.toLowerCase();
+    if (severityLower.includes('high') || severityLower.includes('major')) return "from-red-400 to-red-600";
+    if (severityLower.includes('moderate')) return "from-orange-400 to-orange-600";
     return "from-yellow-400 to-yellow-600";
   };
 
-  const getSeverityBgColor = (severity: number) => {
-    if (severity >= 4) return "from-red-50 to-red-100";
-    if (severity >= 3) return "from-orange-50 to-orange-100";
+  const getSeverityBgColor = (severity: string) => {
+    const severityLower = severity.toLowerCase();
+    if (severityLower.includes('high') || severityLower.includes('major')) return "from-red-50 to-red-100";
+    if (severityLower.includes('moderate')) return "from-orange-50 to-orange-100";
     return "from-yellow-50 to-yellow-100";
   };
 
-  const getSeverityBorderColor = (severity: number) => {
-    if (severity >= 4) return "border-red-200";
-    if (severity >= 3) return "border-orange-200";
+  const getSeverityBorderColor = (severity: string) => {
+    const severityLower = severity.toLowerCase();
+    if (severityLower.includes('high') || severityLower.includes('major')) return "border-red-200";
+    if (severityLower.includes('moderate')) return "border-orange-200";
     return "border-yellow-200";
   };
 
@@ -131,7 +106,7 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
         ) : (
           <>
             <Search className="w-6 h-6 mr-3" />
-            Check Drug Interactions
+            Check Drug Interactions (Live API)
           </>
         )}
       </Button>
@@ -150,26 +125,23 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
                 
                 <div className="space-y-4">
                   {interactions.map((interaction, index) => (
-                    <div key={index} className={`bg-gradient-to-r ${getSeverityBgColor(interaction.severity_level)} p-4 rounded-xl border-2 ${getSeverityBorderColor(interaction.severity_level)} shadow-sm`}>
+                    <div key={index} className={`bg-gradient-to-r ${getSeverityBgColor(interaction.severity)} p-4 rounded-xl border-2 ${getSeverityBorderColor(interaction.severity)} shadow-sm`}>
                       <div className="flex items-start gap-3">
-                        <div className={`bg-gradient-to-br ${getSeverityColor(interaction.severity_level)} p-2 rounded-lg flex-shrink-0`}>
+                        <div className={`bg-gradient-to-br ${getSeverityColor(interaction.severity)} p-2 rounded-lg flex-shrink-0`}>
                           <AlertTriangle className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-bold text-gray-800">
-                              {interaction.medicine_a} + {interaction.medicine_b}
+                              {interaction.drug1} + {interaction.drug2}
                             </h4>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${getSeverityColor(interaction.severity_level)}`}>
-                              {interaction.interaction_type.toUpperCase()}
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${getSeverityColor(interaction.severity)}`}>
+                              {interaction.severity.toUpperCase()}
                             </span>
                           </div>
                           <p className="text-gray-700 text-sm leading-relaxed">
                             {interaction.description}
                           </p>
-                          <div className="mt-2 text-xs text-gray-600">
-                            Severity Level: {interaction.severity_level}/5
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -190,10 +162,10 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
                 <h3 className="font-bold text-green-800 text-xl">✅ No Known Interactions</h3>
               </div>
               <p className="text-green-700 font-medium">
-                Great news! No known interactions found between your current medicines in our database.
+                Great news! No known interactions found between your current medicines.
               </p>
               <p className="text-sm text-green-600 mt-2">
-                Note: This check is based on our current database. Always consult your healthcare provider for comprehensive medical advice.
+                Note: This check uses live medical data from RxNav. Always consult your healthcare provider for comprehensive medical advice.
               </p>
             </div>
           )}
