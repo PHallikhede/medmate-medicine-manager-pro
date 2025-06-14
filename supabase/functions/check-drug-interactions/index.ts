@@ -26,7 +26,6 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
   try {
     const { medicines }: DrugInteractionRequest = await req.json();
     console.log('Checking interactions for medicines:', medicines);
@@ -46,11 +45,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     const rxcuiCache = new Map<string, string | null>();
 
-    // Pre-fetch all RxCUIs
+    // Pre-fetch all RxCUIs, collect drug names with no RxCUI found in an error.
     for (const medicineName of medicines) {
-      if (!rxcuiCache.has(medicineName.toLowerCase().trim())) {
-        const rxcui = await getRxCUI(medicineName.toLowerCase().trim());
-        rxcuiCache.set(medicineName.toLowerCase().trim(), rxcui);
+      const trimmed = medicineName.toLowerCase().trim();
+      if (!rxcuiCache.has(trimmed)) {
+        const rxcui = await getRxCUI(trimmed);
+        rxcuiCache.set(trimmed, rxcui);
         if (!rxcui) {
           responsePayload.errors?.push(`Could not find RxCUI for medicine: ${medicineName}. It might be misspelled or not recognized.`);
           console.warn(`Could not find RxCUI for medicine: ${medicineName}`);
@@ -58,11 +58,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    let hasAnyInteraction = false;
+
     for (let i = 0; i < medicines.length; i++) {
       for (let j = i + 1; j < medicines.length; j++) {
         const drug1Name = medicines[i];
         const drug2Name = medicines[j];
-        
         const rxcui1 = rxcuiCache.get(drug1Name.toLowerCase().trim());
         const rxcui2 = rxcuiCache.get(drug2Name.toLowerCase().trim());
 
@@ -70,6 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
           try {
             const interactionData = await checkInteraction(rxcui1, rxcui2);
             if (interactionData && interactionData.length > 0) {
+              hasAnyInteraction = true;
               interactionData.forEach(interaction => {
                 responsePayload.interactions.push({
                   drug1: drug1Name,
@@ -80,18 +82,20 @@ const handler = async (req: Request): Promise<Response> => {
               });
             }
           } catch (error) {
-            console.error(`Error checking interaction between ${drug1Name} (${rxcui1}) and ${drug2Name} (${rxcui2}):`, error.message);
+            console.error(`Error checking interaction between ${drug1Name} (${rxcui1}) and ${drug2Name} (${rxcui2}):`, error?.message ?? error);
             responsePayload.errors?.push(`Failed to check interaction between ${drug1Name} and ${drug2Name}.`);
           }
-        } else {
-          // Error messages for non-found RxCUIs are already added above
-          console.log(`Skipping interaction check between ${drug1Name} and ${drug2Name} due to missing RxCUI(s).`);
         }
       }
     }
-    
-    if (responsePayload.errors?.length === 0) {
-        delete responsePayload.errors; // Don't include empty errors array
+
+    // If no interactions and no errors, set a default message for clarity.
+    if (!hasAnyInteraction && (!responsePayload.errors || responsePayload.errors.length === 0)) {
+      responsePayload.errors?.push("No known dangerous interactions found between the medicines you entered.");
+    }
+
+    if (responsePayload.errors && responsePayload.errors.length === 0) {
+      delete responsePayload.errors;
     }
 
     return new Response(
