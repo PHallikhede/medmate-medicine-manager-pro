@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle, Search, Shield } from "lucide-react";
+import { AlertTriangle, CheckCircle, Search, Shield, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,42 +16,65 @@ interface DrugInteraction {
   severity: string;
 }
 
+interface InteractionResponse {
+  interactions: DrugInteraction[];
+  errors?: string[];
+}
+
 const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
   const [isChecking, setIsChecking] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
   const [interactions, setInteractions] = useState<DrugInteraction[]>([]);
+  const [apiErrors, setApiErrors] = useState<string[]>([]);
   const { toast } = useToast();
 
   const checkInteractions = async () => {
     setIsChecking(true);
+    setHasChecked(false); // Reset previous results
+    setInteractions([]);
+    setApiErrors([]);
     
     try {
-      // Call the edge function to check drug interactions using RxNav API
-      const { data, error } = await supabase.functions.invoke('check-drug-interactions', {
+      const { data, error: functionError } = await supabase.functions.invoke('check-drug-interactions', {
         body: { medicines }
       });
 
-      if (error) {
-        console.error('Error checking interactions:', error);
+      if (functionError) {
+        console.error('Error invoking edge function:', functionError);
         toast({
-          title: "Error",
-          description: "Failed to check drug interactions. Please try again.",
+          title: "Function Error",
+          description: "Failed to call the interaction checker function. Please try again.",
           variant: "destructive",
         });
+        setApiErrors(["Failed to call the interaction checker function."]);
         setIsChecking(false);
+        setHasChecked(true); // Show that a check attempt was made, even if it failed
         return;
       }
+      
+      const responseData = data as InteractionResponse;
 
-      setInteractions(data.interactions || []);
+      setInteractions(responseData.interactions || []);
+      setApiErrors(responseData.errors || []);
       setHasChecked(true);
       
-    } catch (error) {
-      console.error('Error checking interactions:', error);
+      if (responseData.errors && responseData.errors.length > 0) {
+        toast({
+          title: "Notice",
+          description: responseData.errors.join(" "),
+          variant: "default",
+        });
+      }
+
+    } catch (error) { // Catch unexpected errors during the process
+      console.error('Error in checkInteractions component logic:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Client Error",
+        description: "An unexpected error occurred on the client side. Please try again.",
         variant: "destructive",
       });
+       setApiErrors(["An unexpected error occurred."]);
+       setHasChecked(true);
     } finally {
       setIsChecking(false);
     }
@@ -113,6 +136,22 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
 
       {hasChecked && (
         <div className="mt-6 animate-fade-in">
+          {apiErrors.length > 0 && (
+            <div className="mb-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200/60 rounded-2xl p-6 shadow-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-2 rounded-xl">
+                  <Info className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="font-bold text-yellow-800 text-xl">Notices from Interaction Check</h3>
+              </div>
+              <ul className="list-disc list-inside text-yellow-700 space-y-1">
+                {apiErrors.map((err, index) => (
+                  <li key={index}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {interactions.length > 0 ? (
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200/60 rounded-2xl p-6 shadow-lg">
@@ -154,20 +193,24 @@ const InteractionChecker = ({ medicines }: InteractionCheckerProps) => {
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200/60 rounded-2xl p-6 shadow-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-2 rounded-xl">
-                  <CheckCircle className="w-6 h-6 text-white" />
+            // Only show "No Known Interactions" if there were no API errors and no interactions.
+            // If there were API errors, the apiErrors block above will be shown.
+            apiErrors.length === 0 && ( 
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200/60 rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-2 rounded-xl">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-green-800 text-xl">✅ No Known Interactions</h3>
                 </div>
-                <h3 className="font-bold text-green-800 text-xl">✅ No Known Interactions</h3>
+                <p className="text-green-700 font-medium">
+                  Great news! No known interactions found between the recognized medicines.
+                </p>
+                <p className="text-sm text-green-600 mt-2">
+                  Note: This check uses live medical data from RxNav. Always consult your healthcare provider for comprehensive medical advice.
+                </p>
               </div>
-              <p className="text-green-700 font-medium">
-                Great news! No known interactions found between your current medicines.
-              </p>
-              <p className="text-sm text-green-600 mt-2">
-                Note: This check uses live medical data from RxNav. Always consult your healthcare provider for comprehensive medical advice.
-              </p>
-            </div>
+            )
           )}
         </div>
       )}
