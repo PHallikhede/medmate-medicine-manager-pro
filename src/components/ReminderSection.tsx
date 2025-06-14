@@ -1,63 +1,71 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Clock, Trash2, AlarmClock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const ReminderSection = () => {
+  const { user } = useAuth();
   const [reminderTime, setReminderTime] = useState("");
-  const [email, setEmail] = useState("user@example.com");
+  const [email, setEmail] = useState(user ? user.email ?? "" : "");
   const [activeReminders, setActiveReminders] = useState<string[]>([]);
   const [isSettingReminder, setIsSettingReminder] = useState(false);
   const { toast } = useToast();
 
+  // Fetch reminders for this user
+  useEffect(() => {
+    async function fetchReminders() {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("reminders")
+        .select("reminder_time")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+      if (data) {
+        setActiveReminders(data.map((r) => r.reminder_time));
+      }
+    }
+    fetchReminders();
+  }, [user]);
+
   const setReminder = async () => {
-    if (reminderTime && email) {
+    if (reminderTime && email && user) {
       setIsSettingReminder(true);
-      
-      try {
-        // Call edge function to send email notification
-        const { data, error } = await supabase.functions.invoke('send-reminder-email', {
-          body: {
-            email: email,
-            reminderTime: reminderTime,
-            medicines: ["Sample Medicine"] // In real app, you'd pass actual medicines
-          }
-        });
-
-        if (error) {
-          console.error('Error sending reminder email:', error);
-          toast({
-            title: "Reminder Set! 🔔",
-            description: `Medicine reminder set for ${reminderTime} (Email notification pending)`,
-          });
-        } else {
-          toast({
-            title: "Reminder Set! 🔔",
-            description: `Medicine reminder set for ${reminderTime}. Email notification scheduled!`,
-          });
-        }
-
-        setActiveReminders([...activeReminders, reminderTime]);
-        setReminderTime("");
-        
-      } catch (error) {
-        console.error('Error setting reminder:', error);
+      // Insert reminder for user
+      const { error } = await supabase.from("reminders").insert({
+        user_id: user.id,
+        reminder_time: reminderTime,
+        is_active: true,
+        // add more fields if needed
+      });
+      if (!error) {
         toast({
           title: "Reminder Set! 🔔",
-          description: `Medicine reminder set for ${reminderTime} (Email notification may be delayed)`,
+          description: `Medicine reminder set for ${reminderTime}`,
         });
         setActiveReminders([...activeReminders, reminderTime]);
         setReminderTime("");
-      } finally {
-        setIsSettingReminder(false);
+      } else {
+        toast({
+          title: "Error",
+          description: "Could not set reminder. Try again.",
+          variant: "destructive"
+        });
       }
+      setIsSettingReminder(false);
     }
   };
 
-  const removeReminder = (index: number) => {
+  const removeReminder = async (index: number) => {
+    if (!user) return;
+    const reminderTimeToRemove = activeReminders[index];
+    await supabase.from("reminders")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("reminder_time", reminderTimeToRemove);
     setActiveReminders(activeReminders.filter((_, i) => i !== index));
     toast({
       title: "Reminder Removed",

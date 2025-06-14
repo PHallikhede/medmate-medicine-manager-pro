@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MedicineInputProps {
   onAddMedicine: (medicine: string) => void;
@@ -12,16 +14,29 @@ interface MedicineInputProps {
 const MedicineInput = ({ onAddMedicine }: MedicineInputProps) => {
   const [medicine, setMedicine] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (medicine.trim()) {
-      onAddMedicine(medicine.trim());
-      setMedicine("");
-      toast({
-        title: "Medicine Added! 💊",
-        description: `${medicine} has been added to your list`,
+    if (medicine.trim() && user) {
+      const { error } = await supabase.from("medicines").insert({
+        name: medicine.trim(),
+        user_id: user.id,
       });
+      if (!error) {
+        onAddMedicine(medicine.trim());
+        setMedicine("");
+        toast({
+          title: "Medicine Added! 💊",
+          description: `${medicine} has been added to your list`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Could not add medicine. Try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

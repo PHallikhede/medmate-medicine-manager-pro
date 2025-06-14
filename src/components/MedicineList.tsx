@@ -1,6 +1,8 @@
-
+import { useEffect, useState } from "react";
 import { X, Pill, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MedicineListProps {
   medicines: string[];
@@ -8,7 +10,43 @@ interface MedicineListProps {
 }
 
 const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
-  if (medicines.length === 0) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [medicineList, setMedicineList] = useState<string[]>([]);
+
+  // Fetch medicines from backend when user is ready
+  useEffect(() => {
+    async function fetchMedicines() {
+      if (!user) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("medicines")
+        .select("name")
+        .eq("user_id", user.id);
+      if (data) {
+        setMedicineList(data.map((m) => m.name));
+      }
+      setLoading(false);
+    }
+    fetchMedicines();
+  }, [user]);
+
+  const handleRemove = async (index: number) => {
+    if (!user) return;
+    const name = medicineList[index];
+    // Remove from supabase
+    await supabase.from("medicines")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("name", name);
+    setMedicineList((prev) => prev.filter((_, i) => i !== index));
+    onRemoveMedicine(index);
+  };
+
+  if (loading) {
+    return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
+  }
+  if (medicineList.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <div className="relative inline-block">
@@ -23,7 +61,7 @@ const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
 
   return (
     <div className="space-y-4">
-      {medicines.map((medicine, index) => (
+      {medicineList.map((medicine, index) => (
         <div
           key={index}
           className="group flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl border-2 border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
@@ -37,7 +75,7 @@ const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onRemoveMedicine(index)}
+            onClick={() => handleRemove(index)}
             className="text-red-400 hover:text-red-600 hover:bg-red-100/80 rounded-xl p-3 transition-all duration-200 hover:scale-110"
           >
             <X className="w-5 h-5" />

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Clock, AlertTriangle, Sparkles, User, LogOut } from "lucide-react";
@@ -7,24 +6,24 @@ import MedicineInput from "@/components/MedicineInput";
 import MedicineList from "@/components/MedicineList";
 import InteractionChecker from "@/components/InteractionChecker";
 import ReminderSection from "@/components/ReminderSection";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const [medicines, setMedicines] = useState<string[]>([]);
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   const addMedicine = (medicine: string) => {
-    if (medicine.trim() && !medicines.includes(medicine.trim())) {
-      setMedicines([...medicines, medicine.trim()]);
-    }
+    setMedicines([...medicines, medicine]);
   };
 
   const removeMedicine = (index: number) => {
     setMedicines(medicines.filter((_, i) => i !== index));
   };
 
-  const handleLogout = () => {
-    // Clear any stored session data if needed
-    navigate("/");
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
   };
 
   return (
@@ -67,7 +66,7 @@ const Dashboard = () => {
                   </div>
                   <div className="text-sm">
                     <p className="font-semibold text-foreground">Welcome back!</p>
-                    <p className="text-muted-foreground">user@example.com</p>
+                    <p className="text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>
               </div>
