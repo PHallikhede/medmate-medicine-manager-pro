@@ -24,6 +24,25 @@ const NotificationAlert = ({ onTestNotification }: NotificationAlertProps) => {
     return "Look for a notification icon in your address bar and click 'Allow'";
   };
 
+  const handleBrowserSettings = () => {
+    const userAgent = navigator.userAgent;
+    let instructions = "";
+    
+    if (userAgent.includes('Chrome')) {
+      instructions = "Chrome: Click the site information icon (🔒 or 🔔) next to the URL, then select 'Notifications' and choose 'Allow'. Or go to Settings > Privacy and security > Site settings > Notifications";
+    } else if (userAgent.includes('Firefox')) {
+      instructions = "Firefox: Click the shield icon in the address bar, or go to Settings > Privacy & Security > Permissions > Notifications and find this site";
+    } else if (userAgent.includes('Safari')) {
+      instructions = "Safari: Go to Safari menu > Preferences > Websites > Notifications, find this site and set to 'Allow'";
+    } else if (userAgent.includes('Edge')) {
+      instructions = "Edge: Click the site information icon next to the URL, then select 'Notifications' and choose 'Allow'";
+    } else {
+      instructions = "Look for a notification or site settings icon in your browser's address bar and enable notifications for this site";
+    }
+    
+    alert(`Browser Settings Help:\n\n${instructions}`);
+  };
+
   return (
     <Alert className="border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-yellow-50 mb-6">
       <AlertCircle className="h-5 w-5 text-orange-600" />
@@ -57,29 +76,16 @@ const NotificationAlert = ({ onTestNotification }: NotificationAlertProps) => {
           
           <Button 
             variant="outline" 
-            onClick={() => {
-              // Open browser settings help
-              const settingsUrl = navigator.userAgent.includes('Chrome') 
-                ? 'chrome://settings/content/notifications'
-                : navigator.userAgent.includes('Firefox')
-                ? 'about:preferences#privacy'
-                : '#';
-              
-              if (settingsUrl !== '#') {
-                window.open(settingsUrl, '_blank');
-              } else {
-                alert('Please check your browser settings for notification permissions');
-              }
-            }}
+            onClick={handleBrowserSettings}
             className="border-orange-300 text-orange-700 hover:bg-orange-100"
           >
             <Settings className="w-4 h-4 mr-2" />
-            Browser Settings
+            Help & Settings
           </Button>
         </div>
         
         <p className="text-xs text-orange-600 italic">
-          💡 If you don't see a popup, notifications might already be blocked. Use the Browser Settings button above.
+          💡 If you don't see a popup, notifications might already be blocked. Use the Help & Settings button above.
         </p>
       </AlertDescription>
     </Alert>
