@@ -13,6 +13,7 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
 
   if (!loading && user) {
@@ -25,13 +26,23 @@ const AuthPage = () => {
     e.preventDefault();
     setPending(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
+    
     if (isLogin) {
       const { error } = await signIn(email, password);
-      if (error) setErrorMsg(error.message || "Login failed");
+      if (error) {
+        setErrorMsg(error.message || "Login failed");
+      }
     } else {
       const { error } = await signUp(email, password);
-      if (error) setErrorMsg(error.message || "Signup failed. Check your email for confirmation if required.");
-      else setErrorMsg("Check your email for confirmation!");
+      if (error) {
+        setErrorMsg(error.message || "Signup failed");
+      } else {
+        setSuccessMsg("Account created successfully! You can now log in.");
+        setIsLogin(true);
+        setEmail("");
+        setPassword("");
+      }
     }
     setPending(false);
   };
@@ -85,6 +96,11 @@ const AuthPage = () => {
               {errorMsg && (
                 <div className="text-red-600 bg-red-50 rounded-lg p-3 text-sm">
                   {errorMsg}
+                </div>
+              )}
+              {successMsg && (
+                <div className="text-green-600 bg-green-50 rounded-lg p-3 text-sm">
+                  {successMsg}
                 </div>
               )}
             </div>

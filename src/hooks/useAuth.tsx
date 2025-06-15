@@ -36,11 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/auth`;
+    // Removed emailRedirectTo since we're disabling email confirmation
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: redirectUrl },
     });
     return { error };
   };
