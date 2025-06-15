@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Bell, Clock, Trash2, AlarmClock, Mail, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,8 +96,9 @@ const ReminderSection = () => {
           reminderDate.setDate(reminderDate.getDate() + 1);
         }
 
+        // Fix: Convert data.id to number for the notification ID
         await NotificationService.scheduleReminder(
-          data.id,
+          Number(data.id),
           "💊 Medicine Reminder - MedMate",
           `Time to take your medicines: ${medicineNames.join(', ') || 'Check your medicine list'}`,
           reminderDate,
@@ -126,8 +126,8 @@ const ReminderSection = () => {
   const removeReminder = async (reminder: any) => {
     if (!user) return;
     
-    // Cancel the local notification
-    await NotificationService.cancelReminder(reminder.id);
+    // Fix: Convert reminder.id to number for the notification cancellation
+    await NotificationService.cancelReminder(Number(reminder.id));
     
     // Remove from database
     await supabase.from("reminders")
