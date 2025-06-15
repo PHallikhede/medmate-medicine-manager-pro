@@ -1,19 +1,19 @@
-
 import { useNavigate } from "react-router-dom";
 import { Heart, ArrowRight, MessageCircle, Clock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import AIChatBot from "@/components/AIChatBot";
 
 const Login = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-6">
+      <AIChatBot />
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-200/20 to-green-200/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-green-200/20 to-blue-200/20 rounded-full blur-3xl animate-pulse"></div>
       </div>
-
       <div className="relative w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">

@@ -2,20 +2,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Heart, User, ArrowRight, ArrowLeft } from "lucide-react";
+import { Heart, User, ArrowRight, ArrowLeft, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import AIChatBot from "@/components/AIChatBot";
 
 const AuthPage = () => {
-  const { signUp, user, loading } = useAuth();
+  const { signUp, signIn, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [mode, setMode] = useState<"signup" | "login">("signup");
   const navigate = useNavigate();
 
   if (!loading && user) {
-    // Already authenticated—redirect to dashboard
     setTimeout(() => navigate("/dashboard"), 0);
     return null;
   }
@@ -24,16 +25,25 @@ const AuthPage = () => {
     e.preventDefault();
     setPending(true);
     setErrorMsg(null);
-    
-    const { error } = await signUp(email, password);
+
+    let error;
+    if (mode === "signup") {
+      const resp = await signUp(email, password);
+      error = resp.error;
+    } else {
+      const resp = await signIn(email, password);
+      error = resp.error;
+    }
+
     if (error) {
-      setErrorMsg(error.message || "Signup failed");
+      setErrorMsg(error.message || (mode === "signup" ? "Signup failed" : "Login failed"));
     }
     setPending(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-6">
+      <AIChatBot />
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
@@ -44,10 +54,11 @@ const AuthPage = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-2">
             MedMate
           </h1>
-          {/* Add a dark line below the title */}
           <div className="mx-auto mb-2 h-1 w-24 rounded-full bg-slate-800" />
           <p className="text-muted-foreground text-lg">
-            Create your account to get started
+            {mode === "signup"
+              ? "Create your account to get started"
+              : "Login to your account"}
           </p>
         </div>
 
@@ -68,14 +79,15 @@ const AuthPage = () => {
                 />
               </div>
               <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
                 <Input
                   type="password"
-                  placeholder="Password (at least 6 characters)"
-                  autoComplete="new-password"
+                  placeholder={mode === "signup" ? "Password (at least 6 characters)" : "Password"}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   disabled={pending}
-                  className="h-12 border-2 border-slate-300"
+                  className="pl-12 h-12 border-2 border-slate-300"
                   required
                   minLength={6}
                 />
@@ -91,10 +103,28 @@ const AuthPage = () => {
               disabled={pending}
               className="w-full h-12 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-xl shadow-lg transition-all duration-200"
             >
-              {pending ? "Creating Account..." : "Create Account"}
+              {pending
+                ? mode === "signup"
+                  ? "Creating Account..."
+                  : "Logging in..."
+                : mode === "signup"
+                  ? "Create Account"
+                  : "Log In"}
               <ArrowRight className="inline-block w-5 h-5 ml-2" />
             </Button>
           </form>
+          <div className="flex justify-between mt-6">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-slate-500"
+              onClick={() => setMode(mode === "signup" ? "login" : "signup")}
+            >
+              {mode === "signup"
+                ? "Already have an account? Log in"
+                : "Need an account? Sign up"}
+            </Button>
+          </div>
         </div>
         <div className="mt-6 text-center">
           <Button
