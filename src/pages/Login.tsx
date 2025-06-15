@@ -1,27 +1,10 @@
-import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
-import { Heart, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Heart, ArrowRight, MessageCircle, Clock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && password) {
-      setIsLoading(true);
-      // Simulate loading
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate("/dashboard");
-      }, 1000);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-6">
@@ -43,94 +26,64 @@ const Login = () => {
             MedMate
           </h1>
           <p className="text-muted-foreground text-lg">
-            Your personal medicine companion
+            Your personal medicine companion with AI assistance
           </p>
         </div>
 
-        {/* Login Form */}
+        {/* Welcome Card */}
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-slate-200/50 hover:shadow-2xl transition-all duration-300">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-4">
-              <div className="relative group">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400 group-focus-within:text-blue-600 transition-colors duration-200" />
-                <Input
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-12 h-12 border-2 border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 rounded-xl bg-white/80 placeholder:text-slate-600 text-slate-700 transition-all duration-200 hover:border-slate-400"
-                  required
-                />
-              </div>
-              
-              <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-400 group-focus-within:text-green-600 transition-colors duration-200" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 pr-12 h-12 border-2 border-slate-300 focus:border-green-400 focus:ring-4 focus:ring-green-100 rounded-xl bg-white/80 placeholder:text-slate-600 text-slate-700 transition-all duration-200 hover:border-slate-400"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <Button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Signing In...
-                </div>
-              ) : (
-                <>
-                  Sign In
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <button className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-all duration-200">
-                Sign up
-              </button>
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Welcome to MedMate!</h2>
+            <p className="text-muted-foreground">
+              Manage your medicines, check interactions, set reminders, and chat with our AI assistant.
             </p>
           </div>
+
+          <Button 
+            onClick={() => navigate("/auth")}
+            className="w-full h-12 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Get Started
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
         </div>
 
         {/* Features */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div className="p-3 group cursor-pointer">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg mx-auto mb-2 flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-200">
-              <Heart className="w-4 h-4 text-blue-600" />
+        <div className="mt-8 grid grid-cols-1 gap-4 text-center">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-slate-200/50 hover:bg-white/80 transition-all duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">AI Health Assistant</p>
+                <p className="text-sm text-muted-foreground">Get instant answers to your health questions</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors duration-200">Medicine Tracking</p>
           </div>
-          <div className="p-3 group cursor-pointer">
-            <div className="w-8 h-8 bg-green-100 rounded-lg mx-auto mb-2 flex items-center justify-center group-hover:bg-green-200 transition-colors duration-200">
-              <User className="w-4 h-4 text-green-600" />
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-slate-200/50 hover:bg-white/80 transition-all duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">Medicine Reminders</p>
+                <p className="text-sm text-muted-foreground">Never miss your medication again</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors duration-200">Personal Care</p>
           </div>
-          <div className="p-3 group cursor-pointer">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg mx-auto mb-2 flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-200">
-              <Lock className="w-4 h-4 text-blue-600" />
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-slate-200/50 hover:bg-white/80 transition-all duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Shield className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">Drug Interaction Checker</p>
+                <p className="text-sm text-muted-foreground">Stay safe with interaction alerts</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors duration-200">Secure & Safe</p>
           </div>
         </div>
       </div>

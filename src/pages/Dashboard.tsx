@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Clock, AlertTriangle, Sparkles, User, LogOut } from "lucide-react";
@@ -6,6 +7,7 @@ import MedicineInput from "@/components/MedicineInput";
 import MedicineList from "@/components/MedicineList";
 import InteractionChecker from "@/components/InteractionChecker";
 import ReminderSection from "@/components/ReminderSection";
+import AIChatBot from "@/components/AIChatBot";
 import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
@@ -134,6 +136,9 @@ const Dashboard = () => {
           <ReminderSection />
         </div>
       </main>
+
+      {/* AI Chatbot */}
+      <AIChatBot />
     </div>
   );
 };

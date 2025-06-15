@@ -2,18 +2,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Heart, Lock, User, ArrowRight, ArrowLeft } from "lucide-react";
+import { Heart, User, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const AuthPage = () => {
-  const { signUp, signIn, user, loading } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const { signUp, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
 
   if (!loading && user) {
@@ -26,23 +24,10 @@ const AuthPage = () => {
     e.preventDefault();
     setPending(true);
     setErrorMsg(null);
-    setSuccessMsg(null);
     
-    if (isLogin) {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setErrorMsg(error.message || "Login failed");
-      }
-    } else {
-      const { error } = await signUp(email, password);
-      if (error) {
-        setErrorMsg(error.message || "Signup failed");
-      } else {
-        setSuccessMsg("Account created successfully! You can now log in.");
-        setIsLogin(true);
-        setEmail("");
-        setPassword("");
-      }
+    const { error } = await signUp(email, password);
+    if (error) {
+      setErrorMsg(error.message || "Signup failed");
     }
     setPending(false);
   };
@@ -60,7 +45,7 @@ const AuthPage = () => {
             MedMate
           </h1>
           <p className="text-muted-foreground text-lg">
-            {isLogin ? "Login to continue" : "Create your account"}
+            Create your account to get started
           </p>
         </div>
 
@@ -81,26 +66,21 @@ const AuthPage = () => {
                 />
               </div>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-400" />
                 <Input
                   type="password"
-                  placeholder="Password"
-                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  placeholder="Password (at least 6 characters)"
+                  autoComplete="new-password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   disabled={pending}
-                  className="pl-12 h-12 border-2 border-slate-300"
+                  className="h-12 border-2 border-slate-300"
                   required
+                  minLength={6}
                 />
               </div>
               {errorMsg && (
                 <div className="text-red-600 bg-red-50 rounded-lg p-3 text-sm">
                   {errorMsg}
-                </div>
-              )}
-              {successMsg && (
-                <div className="text-green-600 bg-green-50 rounded-lg p-3 text-sm">
-                  {successMsg}
                 </div>
               )}
             </div>
@@ -109,35 +89,10 @@ const AuthPage = () => {
               disabled={pending}
               className="w-full h-12 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-xl shadow-lg transition-all duration-200"
             >
-              {pending ? "Processing..." : isLogin ? "Login" : "Sign Up"}
+              {pending ? "Creating Account..." : "Create Account"}
               <ArrowRight className="inline-block w-5 h-5 ml-2" />
             </Button>
           </form>
-          <div className="mt-4 text-center">
-            {isLogin ? (
-              <span>
-                Don't have an account?{" "}
-                <button
-                  className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-all duration-200"
-                  onClick={() => setIsLogin(false)}
-                  disabled={pending}
-                >
-                  Sign up
-                </button>
-              </span>
-            ) : (
-              <span>
-                Already have an account?{" "}
-                <button
-                  className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-all duration-200"
-                  onClick={() => setIsLogin(true)}
-                  disabled={pending}
-                >
-                  Login
-                </button>
-              </span>
-            )}
-          </div>
         </div>
         <div className="mt-6 text-center">
           <Button
