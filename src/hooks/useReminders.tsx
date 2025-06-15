@@ -27,17 +27,7 @@ export const useReminders = () => {
 
   const setReminder = async (reminderTime: string, email: string) => {
     if (reminderTime && email && user) {
-      const hasPermission = await NotificationService.requestPermissions();
-      
-      if (!hasPermission) {
-        toast({
-          title: "Permission Required",
-          description: "Please allow notifications to receive medicine reminders on your device",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
+      // Store reminder in database
       const { data, error } = await supabase.from("reminders").insert({
         user_id: user.id,
         reminder_time: reminderTime,
@@ -45,6 +35,7 @@ export const useReminders = () => {
       }).select().single();
 
       if (!error && data) {
+        // Get user's medicines for the reminder
         const { data: medicines } = await supabase
           .from("medicines")
           .select("name")
@@ -52,6 +43,7 @@ export const useReminders = () => {
 
         const medicineNames = medicines?.map(m => m.name) || [];
 
+        // Schedule email reminder using Supabase edge function
         const reminderDate = new Date();
         const [hours, minutes] = reminderTime.split(':');
         reminderDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -60,17 +52,41 @@ export const useReminders = () => {
           reminderDate.setDate(reminderDate.getDate() + 1);
         }
 
-        await NotificationService.scheduleReminder(
-          Number(data.id),
-          "💊 Medicine Reminder - MedMate",
-          `Time to take your medicines: ${medicineNames.join(', ') || 'Check your medicine list'}`,
-          reminderDate,
-          medicineNames
-        );
+        // Call the email reminder edge function
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-reminder-email', {
+            body: {
+              email: email,
+              reminderTime: reminderTime,
+              medicines: medicineNames,
+              scheduledTime: reminderDate.toISOString()
+            }
+          });
+
+          if (emailError) {
+            console.error('Error scheduling email reminder:', emailError);
+          } else {
+            console.log('Email reminder scheduled successfully');
+          }
+        } catch (error) {
+          console.error('Error calling email reminder function:', error);
+        }
+
+        // Also try to schedule browser notifications if possible
+        const hasPermission = await NotificationService.requestPermissions();
+        if (hasPermission) {
+          await NotificationService.scheduleReminder(
+            Number(data.id),
+            "💊 Medicine Reminder - MedMate",
+            `Time to take your medicines: ${medicineNames.join(', ') || 'Check your medicine list'}`,
+            reminderDate,
+            medicineNames
+          );
+        }
 
         toast({
-          title: "Reminder Set! 🔔📱",
-          description: `Medicine reminder set for ${reminderTime}. You'll receive notifications on your device!`,
+          title: "Reminder Set! 📧⏰",
+          description: `Medicine reminder set for ${reminderTime}. You'll receive email notifications at the scheduled time!`,
         });
         
         setActiveReminders([...activeReminders, data]);

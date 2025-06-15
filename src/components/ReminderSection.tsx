@@ -1,5 +1,4 @@
 
-import NotificationAlert from "./NotificationAlert";
 import NotificationStatus from "./reminder/NotificationStatus";
 import ReminderForm from "./reminder/ReminderForm";
 import ActiveRemindersList from "./reminder/ActiveRemindersList";
@@ -12,11 +11,6 @@ const ReminderSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Show alert only when notifications are disabled */}
-      {!notificationPermission && (
-        <NotificationAlert onTestNotification={testNotification} />
-      )}
-
       <NotificationStatus 
         notificationPermission={notificationPermission}
         onTestNotification={testNotification}
