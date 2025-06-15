@@ -44,6 +44,8 @@ const AuthPage = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-2">
             MedMate
           </h1>
+          {/* Add a dark line below the title */}
+          <div className="mx-auto mb-2 h-1 w-24 rounded-full bg-slate-800" />
           <p className="text-muted-foreground text-lg">
             Create your account to get started
           </p>
