@@ -48,13 +48,7 @@ export const useNotificationPermission = () => {
         }
       }
       
-      if (currentStatus === 'denied') {
-        toast({
-          title: "Notifications Blocked",
-          description: "Please enable notifications in your browser settings to receive medicine reminders",
-          variant: "destructive"
-        });
-      }
+      // Removed the "Notifications Blocked" toast that was showing when status === 'denied'
     } catch (error) {
       console.error('Error checking notification permission:', error);
     }
