@@ -19,25 +19,41 @@ const ReminderSection = () => {
 
   useEffect(() => {
     checkNotificationPermission();
+    
+    // Check permission status every 2 seconds to catch when user enables it
+    const interval = setInterval(checkNotificationPermission, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const checkNotificationPermission = async () => {
     try {
       const currentStatus = NotificationService.getPermissionStatus();
       const isGranted = currentStatus === 'granted';
-      setNotificationPermission(isGranted);
       
-      // If notifications are now enabled, send a welcome notification
-      if (isGranted) {
-        await NotificationService.showInstantNotification(
-          "🎉 Notifications Enabled - MedMate",
-          "Perfect! You'll now receive medicine reminders on your device."
-        );
+      console.log('Checking notification permission:', currentStatus, 'Granted:', isGranted);
+      
+      // Only update state if it changed
+      if (isGranted !== notificationPermission) {
+        setNotificationPermission(isGranted);
         
-        toast({
-          title: "Notifications Enabled! 🎉",
-          description: "You should see a test notification now. Medicine reminders are ready to go!",
-        });
+        // If notifications are now enabled, send a welcome notification
+        if (isGranted && !notificationPermission) {
+          console.log('Notifications just became enabled, sending welcome notification');
+          
+          const success = await NotificationService.showInstantNotification(
+            "🎉 Notifications Enabled - MedMate",
+            "Perfect! You'll now receive medicine reminders on your device."
+          );
+          
+          if (success) {
+            toast({
+              title: "Notifications Enabled! 🎉",
+              description: "You should see a test notification now. Medicine reminders are ready to go!",
+            });
+          } else {
+            console.log('Failed to send welcome notification');
+          }
+        }
       }
       
       if (currentStatus === 'denied') {
@@ -149,28 +165,48 @@ const ReminderSection = () => {
   };
 
   const testNotification = async () => {
-    const hasPermission = await NotificationService.requestPermissions();
+    console.log('Test notification button clicked');
     
-    if (!hasPermission) {
+    try {
+      const hasPermission = await NotificationService.requestPermissions();
+      console.log('Permission request result:', hasPermission);
+      
+      if (!hasPermission) {
+        toast({
+          title: "Permission Required",
+          description: "Please allow notifications to test alerts. Look for the popup in your browser!",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setNotificationPermission(true);
+
+      const success = await NotificationService.showInstantNotification(
+        "💊 Test Notification - MedMate",
+        "This is how your medicine reminders will look!"
+      );
+
+      if (success) {
+        toast({
+          title: "Test Notification Sent! 📱",
+          description: "Check your device/browser for the notification",
+        });
+      } else {
+        toast({
+          title: "Notification Failed",
+          description: "Could not send test notification. Please check your browser settings.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error sending test notification:', error);
       toast({
-        title: "Permission Required",
-        description: "Please allow notifications to test alerts. Look for the popup in your browser!",
+        title: "Error",
+        description: "Failed to send test notification. Please try again.",
         variant: "destructive"
       });
-      return;
     }
-    
-    setNotificationPermission(true);
-
-    await NotificationService.showInstantNotification(
-      "💊 Test Notification - MedMate",
-      "This is how your medicine reminders will look!"
-    );
-
-    toast({
-      title: "Test Notification Sent! 📱",
-      description: "Check your device for the notification",
-    });
   };
 
   return (
