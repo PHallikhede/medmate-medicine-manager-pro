@@ -1,5 +1,6 @@
 
-import { Smartphone, Button } from "lucide-react";
+import { Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface NotificationStatusProps {
   notificationPermission: boolean;
