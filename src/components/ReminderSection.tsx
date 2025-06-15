@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { NotificationService } from "@/services/NotificationService";
+import NotificationAlert from "./NotificationAlert";
 
 const ReminderSection = () => {
   const { user } = useAuth();
@@ -16,7 +17,6 @@ const ReminderSection = () => {
   const [notificationPermission, setNotificationPermission] = useState(false);
   const { toast } = useToast();
 
-  // Check notification permissions on mount
   useEffect(() => {
     checkNotificationPermission();
   }, []);
@@ -172,7 +172,11 @@ const ReminderSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Notification Status */}
+      {/* Show alert only when notifications are disabled */}
+      {!notificationPermission && (
+        <NotificationAlert onTestNotification={testNotification} />
+      )}
+
       <div className={`p-4 rounded-xl border-2 ${notificationPermission ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
         <div className="flex items-center gap-3">
           <Smartphone className={`w-5 h-5 ${notificationPermission ? 'text-green-600' : 'text-orange-600'}`} />
@@ -198,7 +202,6 @@ const ReminderSection = () => {
         </div>
       </div>
 
-      {/* Email Input */}
       <div className="relative">
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
           <Mail className="w-5 h-5 text-blue-400" />
