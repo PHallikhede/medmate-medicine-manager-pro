@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, Clock, Trash2, AlarmClock, Mail, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ const ReminderSection = () => {
   const [activeReminders, setActiveReminders] = useState<any[]>([]);
   const [isSettingReminder, setIsSettingReminder] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState(false);
+  const welcomeNotificationSent = useRef(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,9 +37,10 @@ const ReminderSection = () => {
       if (isGranted !== notificationPermission) {
         setNotificationPermission(isGranted);
         
-        // If notifications are now enabled, send a welcome notification
-        if (isGranted && !notificationPermission) {
+        // If notifications are now enabled and we haven't sent the welcome notification yet
+        if (isGranted && !notificationPermission && !welcomeNotificationSent.current) {
           console.log('Notifications just became enabled, sending welcome notification');
+          welcomeNotificationSent.current = true;
           
           const success = await NotificationService.showInstantNotification(
             "🎉 Notifications Enabled - MedMate",
