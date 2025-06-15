@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { X, Pill, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +49,19 @@ const fetchMedicineInfo = async (name: string): Promise<MedicineInfo> => {
     };
   }
 };
+
+// Helper to get a short, simple summary
+function getSimpleSentence(text: string) {
+  if (!text || typeof text !== "string") return "Not available.";
+  // Split by dot or line break, pick the first sentence with at least a few words
+  const first = text.split(/[\.\n]/).find(t => t.trim().split(" ").length > 3);
+  if (!first) return "Not available.";
+  // Remove technical jargon (very limited, just as example)
+  return first
+    .replace(/(contraindicated|intravenously|therapeutic|hypersensitivity|monitoring|dosage)/gi, "")
+    .replace(/\s+/g, " ")
+    .trim() + ".";
+}
 
 const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
   const { user } = useAuth();
@@ -147,11 +159,11 @@ const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
                   <div className="bg-white/70 rounded-xl p-2 border border-slate-100">
                     <p className="text-[13px] text-slate-700">
                       <span className="font-semibold">Uses: </span>
-                      {medicineInfo[medicine].uses || "Not available."}
+                      {getSimpleSentence(medicineInfo[medicine].uses)}
                     </p>
                     <p className="text-[13px] text-slate-700 mt-1 mb-1">
                       <span className="font-semibold">Side Effects: </span>
-                      {medicineInfo[medicine].sideEffects || "Not available."}
+                      {getSimpleSentence(medicineInfo[medicine].sideEffects)}
                     </p>
                     {medicineInfo[medicine].error && (
                       <p className="text-xs text-red-500">API Error: {medicineInfo[medicine].error}</p>
@@ -181,4 +193,3 @@ const MedicineList = ({ medicines, onRemoveMedicine }: MedicineListProps) => {
 };
 
 export default MedicineList;
-
