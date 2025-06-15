@@ -23,9 +23,22 @@ const ReminderSection = () => {
 
   const checkNotificationPermission = async () => {
     try {
-      // Check current status without requesting
       const currentStatus = NotificationService.getPermissionStatus();
-      setNotificationPermission(currentStatus === 'granted');
+      const isGranted = currentStatus === 'granted';
+      setNotificationPermission(isGranted);
+      
+      // If notifications are now enabled, send a welcome notification
+      if (isGranted) {
+        await NotificationService.showInstantNotification(
+          "🎉 Notifications Enabled - MedMate",
+          "Perfect! You'll now receive medicine reminders on your device."
+        );
+        
+        toast({
+          title: "Notifications Enabled! 🎉",
+          description: "You should see a test notification now. Medicine reminders are ready to go!",
+        });
+      }
       
       if (currentStatus === 'denied') {
         toast({
@@ -39,7 +52,6 @@ const ReminderSection = () => {
     }
   };
 
-  // Fetch reminders for this user
   useEffect(() => {
     async function fetchReminders() {
       if (!user) return;
@@ -57,7 +69,6 @@ const ReminderSection = () => {
 
   const setReminder = async () => {
     if (reminderTime && email && user) {
-      // Always request permissions when setting a reminder to trigger popup
       const hasPermission = await NotificationService.requestPermissions();
       
       if (!hasPermission) {
@@ -72,7 +83,6 @@ const ReminderSection = () => {
       setNotificationPermission(true);
       setIsSettingReminder(true);
       
-      // Insert reminder for user
       const { data, error } = await supabase.from("reminders").insert({
         user_id: user.id,
         reminder_time: reminderTime,
@@ -80,7 +90,6 @@ const ReminderSection = () => {
       }).select().single();
 
       if (!error && data) {
-        // Get user's medicines for the notification
         const { data: medicines } = await supabase
           .from("medicines")
           .select("name")
@@ -88,17 +97,14 @@ const ReminderSection = () => {
 
         const medicineNames = medicines?.map(m => m.name) || [];
 
-        // Schedule local notification
         const reminderDate = new Date();
         const [hours, minutes] = reminderTime.split(':');
         reminderDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         
-        // If the time is for today but already passed, schedule for tomorrow
         if (reminderDate <= new Date()) {
           reminderDate.setDate(reminderDate.getDate() + 1);
         }
 
-        // Fix: Convert data.id to number for the notification ID
         await NotificationService.scheduleReminder(
           Number(data.id),
           "💊 Medicine Reminder - MedMate",
@@ -129,10 +135,8 @@ const ReminderSection = () => {
   const removeReminder = async (reminder: any) => {
     if (!user) return;
     
-    // Fix: Convert reminder.id to number for the notification cancellation
     await NotificationService.cancelReminder(Number(reminder.id));
     
-    // Remove from database
     await supabase.from("reminders")
       .delete()
       .eq("id", reminder.id);
@@ -145,7 +149,6 @@ const ReminderSection = () => {
   };
 
   const testNotification = async () => {
-    // Always request permissions for test to trigger popup
     const hasPermission = await NotificationService.requestPermissions();
     
     if (!hasPermission) {
@@ -202,6 +205,7 @@ const ReminderSection = () => {
         </div>
       </div>
 
+      
       <div className="relative">
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
           <Mail className="w-5 h-5 text-blue-400" />
@@ -215,7 +219,6 @@ const ReminderSection = () => {
         />
       </div>
 
-      {/* Time Input and Set Button */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -247,7 +250,6 @@ const ReminderSection = () => {
         </Button>
       </div>
 
-      {/* Active Reminders */}
       {activeReminders.length > 0 && (
         <div className="space-y-4">
           <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
@@ -290,7 +292,6 @@ const ReminderSection = () => {
         </div>
       )}
 
-      {/* Empty State */}
       {activeReminders.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <div className="relative inline-block">
