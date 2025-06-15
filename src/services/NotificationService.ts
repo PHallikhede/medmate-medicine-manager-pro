@@ -7,8 +7,13 @@ export class NotificationService {
     if (!Capacitor.isNativePlatform()) {
       console.log('Not a native platform, using browser notifications');
       if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        return permission === 'granted';
+        // Check current permission status
+        if (Notification.permission === 'default') {
+          // This will trigger the popup
+          const permission = await Notification.requestPermission();
+          return permission === 'granted';
+        }
+        return Notification.permission === 'granted';
       }
       return false;
     }
@@ -105,5 +110,16 @@ export class NotificationService {
         }
       ]
     });
+  }
+
+  // New method to check current permission status
+  static getPermissionStatus() {
+    if (!Capacitor.isNativePlatform()) {
+      if ('Notification' in window) {
+        return Notification.permission;
+      }
+      return 'default';
+    }
+    return 'default';
   }
 }

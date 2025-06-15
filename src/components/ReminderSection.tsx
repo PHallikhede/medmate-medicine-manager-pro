@@ -23,12 +23,14 @@ const ReminderSection = () => {
 
   const checkNotificationPermission = async () => {
     try {
-      const hasPermission = await NotificationService.requestPermissions();
-      setNotificationPermission(hasPermission);
-      if (!hasPermission) {
+      // Check current status without requesting
+      const currentStatus = NotificationService.getPermissionStatus();
+      setNotificationPermission(currentStatus === 'granted');
+      
+      if (currentStatus === 'denied') {
         toast({
-          title: "Notification Permission Required",
-          description: "Please enable notifications to receive medicine reminders",
+          title: "Notifications Blocked",
+          description: "Please enable notifications in your browser settings to receive medicine reminders",
           variant: "destructive"
         });
       }
@@ -55,19 +57,19 @@ const ReminderSection = () => {
 
   const setReminder = async () => {
     if (reminderTime && email && user) {
-      if (!notificationPermission) {
-        const hasPermission = await NotificationService.requestPermissions();
-        if (!hasPermission) {
-          toast({
-            title: "Permission Required",
-            description: "Please enable notifications to set reminders",
-            variant: "destructive"
-          });
-          return;
-        }
-        setNotificationPermission(true);
+      // Always request permissions when setting a reminder to trigger popup
+      const hasPermission = await NotificationService.requestPermissions();
+      
+      if (!hasPermission) {
+        toast({
+          title: "Permission Required",
+          description: "Please allow notifications to receive medicine reminders on your device",
+          variant: "destructive"
+        });
+        return;
       }
-
+      
+      setNotificationPermission(true);
       setIsSettingReminder(true);
       
       // Insert reminder for user
@@ -119,6 +121,7 @@ const ReminderSection = () => {
           variant: "destructive"
         });
       }
+
       setIsSettingReminder(false);
     }
   };
@@ -142,18 +145,19 @@ const ReminderSection = () => {
   };
 
   const testNotification = async () => {
-    if (!notificationPermission) {
-      const hasPermission = await NotificationService.requestPermissions();
-      if (!hasPermission) {
-        toast({
-          title: "Permission Required",
-          description: "Please enable notifications to test alerts",
-          variant: "destructive"
-        });
-        return;
-      }
-      setNotificationPermission(true);
+    // Always request permissions for test to trigger popup
+    const hasPermission = await NotificationService.requestPermissions();
+    
+    if (!hasPermission) {
+      toast({
+        title: "Permission Required",
+        description: "Please allow notifications to test alerts. Look for the popup in your browser!",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    setNotificationPermission(true);
 
     await NotificationService.showInstantNotification(
       "💊 Test Notification - MedMate",
