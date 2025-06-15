@@ -1,19 +1,42 @@
 
 import { useState, useEffect } from "react";
-import { Bell, Clock, Trash2, AlarmClock, Mail } from "lucide-react";
+import { Bell, Clock, Trash2, AlarmClock, Mail, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationService } from "@/services/NotificationService";
 
 const ReminderSection = () => {
   const { user } = useAuth();
   const [reminderTime, setReminderTime] = useState("");
   const [email, setEmail] = useState(user ? user.email ?? "" : "");
-  const [activeReminders, setActiveReminders] = useState<string[]>([]);
+  const [activeReminders, setActiveReminders] = useState<any[]>([]);
   const [isSettingReminder, setIsSettingReminder] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState(false);
   const { toast } = useToast();
+
+  // Check notification permissions on mount
+  useEffect(() => {
+    checkNotificationPermission();
+  }, []);
+
+  const checkNotificationPermission = async () => {
+    try {
+      const hasPermission = await NotificationService.requestPermissions();
+      setNotificationPermission(hasPermission);
+      if (!hasPermission) {
+        toast({
+          title: "Notification Permission Required",
+          description: "Please enable notifications to receive medicine reminders",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error checking notification permission:', error);
+    }
+  };
 
   // Fetch reminders for this user
   useEffect(() => {
@@ -21,11 +44,11 @@ const ReminderSection = () => {
       if (!user) return;
       const { data, error } = await supabase
         .from("reminders")
-        .select("reminder_time")
+        .select("*")
         .eq("user_id", user.id)
         .eq("is_active", true);
       if (data) {
-        setActiveReminders(data.map((r) => r.reminder_time));
+        setActiveReminders(data);
       }
     }
     fetchReminders();
@@ -33,20 +56,61 @@ const ReminderSection = () => {
 
   const setReminder = async () => {
     if (reminderTime && email && user) {
+      if (!notificationPermission) {
+        const hasPermission = await NotificationService.requestPermissions();
+        if (!hasPermission) {
+          toast({
+            title: "Permission Required",
+            description: "Please enable notifications to set reminders",
+            variant: "destructive"
+          });
+          return;
+        }
+        setNotificationPermission(true);
+      }
+
       setIsSettingReminder(true);
+      
       // Insert reminder for user
-      const { error } = await supabase.from("reminders").insert({
+      const { data, error } = await supabase.from("reminders").insert({
         user_id: user.id,
         reminder_time: reminderTime,
         is_active: true,
-        // add more fields if needed
-      });
-      if (!error) {
+      }).select().single();
+
+      if (!error && data) {
+        // Get user's medicines for the notification
+        const { data: medicines } = await supabase
+          .from("medicines")
+          .select("name")
+          .eq("user_id", user.id);
+
+        const medicineNames = medicines?.map(m => m.name) || [];
+
+        // Schedule local notification
+        const reminderDate = new Date();
+        const [hours, minutes] = reminderTime.split(':');
+        reminderDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        
+        // If the time is for today but already passed, schedule for tomorrow
+        if (reminderDate <= new Date()) {
+          reminderDate.setDate(reminderDate.getDate() + 1);
+        }
+
+        await NotificationService.scheduleReminder(
+          data.id,
+          "💊 Medicine Reminder - MedMate",
+          `Time to take your medicines: ${medicineNames.join(', ') || 'Check your medicine list'}`,
+          reminderDate,
+          medicineNames
+        );
+
         toast({
-          title: "Reminder Set! 🔔",
-          description: `Medicine reminder set for ${reminderTime}`,
+          title: "Reminder Set! 🔔📱",
+          description: `Medicine reminder set for ${reminderTime}. You'll receive notifications on your device!`,
         });
-        setActiveReminders([...activeReminders, reminderTime]);
+        
+        setActiveReminders([...activeReminders, data]);
         setReminderTime("");
       } else {
         toast({
@@ -59,22 +123,77 @@ const ReminderSection = () => {
     }
   };
 
-  const removeReminder = async (index: number) => {
+  const removeReminder = async (reminder: any) => {
     if (!user) return;
-    const reminderTimeToRemove = activeReminders[index];
+    
+    // Cancel the local notification
+    await NotificationService.cancelReminder(reminder.id);
+    
+    // Remove from database
     await supabase.from("reminders")
       .delete()
-      .eq("user_id", user.id)
-      .eq("reminder_time", reminderTimeToRemove);
-    setActiveReminders(activeReminders.filter((_, i) => i !== index));
+      .eq("id", reminder.id);
+    
+    setActiveReminders(activeReminders.filter(r => r.id !== reminder.id));
     toast({
       title: "Reminder Removed",
-      description: "Medicine reminder has been cancelled",
+      description: "Medicine reminder and notifications have been cancelled",
+    });
+  };
+
+  const testNotification = async () => {
+    if (!notificationPermission) {
+      const hasPermission = await NotificationService.requestPermissions();
+      if (!hasPermission) {
+        toast({
+          title: "Permission Required",
+          description: "Please enable notifications to test alerts",
+          variant: "destructive"
+        });
+        return;
+      }
+      setNotificationPermission(true);
+    }
+
+    await NotificationService.showInstantNotification(
+      "💊 Test Notification - MedMate",
+      "This is how your medicine reminders will look!"
+    );
+
+    toast({
+      title: "Test Notification Sent! 📱",
+      description: "Check your device for the notification",
     });
   };
 
   return (
     <div className="space-y-6">
+      {/* Notification Status */}
+      <div className={`p-4 rounded-xl border-2 ${notificationPermission ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
+        <div className="flex items-center gap-3">
+          <Smartphone className={`w-5 h-5 ${notificationPermission ? 'text-green-600' : 'text-orange-600'}`} />
+          <div className="flex-1">
+            <p className={`font-semibold ${notificationPermission ? 'text-green-800' : 'text-orange-800'}`}>
+              {notificationPermission ? '✅ Notifications Enabled' : '⚠️ Notifications Disabled'}
+            </p>
+            <p className={`text-sm ${notificationPermission ? 'text-green-600' : 'text-orange-600'}`}>
+              {notificationPermission 
+                ? 'You will receive push notifications for your medicine reminders'
+                : 'Enable notifications to receive medicine alerts on your device'
+              }
+            </p>
+          </div>
+          <Button
+            onClick={testNotification}
+            size="sm"
+            variant={notificationPermission ? "default" : "outline"}
+            className="shrink-0"
+          >
+            Test Alert
+          </Button>
+        </div>
+      </div>
+
       {/* Email Input */}
       <div className="relative">
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -128,9 +247,9 @@ const ReminderSection = () => {
             <AlarmClock className="w-5 h-5 text-green-600" />
             Active Reminders:
           </h3>
-          {activeReminders.map((time, index) => (
+          {activeReminders.map((reminder, index) => (
             <div
-              key={index}
+              key={reminder.id}
               className="group flex items-center justify-between p-5 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 rounded-2xl border-2 border-green-200/60 hover:border-green-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             >
               <div className="flex items-center gap-4">
@@ -138,14 +257,23 @@ const ReminderSection = () => {
                   <Clock className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <span className="text-green-800 font-semibold text-lg">Daily at {time}</span>
-                  <p className="text-sm text-green-600">📧 Email notifications enabled</p>
+                  <span className="text-green-800 font-semibold text-lg">Daily at {reminder.reminder_time}</span>
+                  <div className="flex items-center gap-4 mt-1">
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      Email notifications enabled
+                    </p>
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <Smartphone className="w-3 h-3" />
+                      Push notifications active
+                    </p>
+                  </div>
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => removeReminder(index)}
+                onClick={() => removeReminder(reminder)}
                 className="text-red-400 hover:text-red-600 hover:bg-red-100/80 rounded-xl p-3 transition-all duration-200 hover:scale-110"
               >
                 <Trash2 className="w-5 h-5" />
@@ -163,7 +291,7 @@ const ReminderSection = () => {
             <Bell className="w-6 h-6 absolute -top-2 -right-2 text-green-300 animate-pulse" />
           </div>
           <p className="text-lg font-medium mb-2">No active reminders</p>
-          <p className="text-sm text-gray-400">Set a time above to get medicine reminders via email</p>
+          <p className="text-sm text-gray-400">Set a time above to get medicine reminders via email and push notifications</p>
         </div>
       )}
     </div>
